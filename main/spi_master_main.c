@@ -9,8 +9,8 @@
 #include "driver/gpio.h"
 
 #define PIN_NUM_MOSI 23
-#define PIN_NUM_CLK  19
-#define PIN_NUM_CS   22
+#define PIN_NUM_CLK  18
+#define PIN_NUM_CS   5
 
 // There are 5 8-bit shift registers per panel, 2 panels
 #define BUFFER_SIZE (5*8)
@@ -48,21 +48,34 @@ static spi_transaction_t trans_buf[2] = {
 
 static spi_transaction_t *last_buf_desc = &trans_buf[1];
 
+static void pre_g(spi_transaction_t *t) {
+   gpio_set_level(PIN_NUM_CS, 1);
+}
+
+static void post_g(spi_transaction_t *t) {
+   gpio_set_level(PIN_NUM_CS, 0);
+}
+
 // Simple routine to generate some patterns and send them to the LED Panel.
 static void animate(spi_device_handle_t spi) {
     int frame=0;
     esp_err_t ret;
 
     while(1) {
-        frame++;
+        // No spam :)
+        if(frame % (2 << 12) == 0)
+           printf("Frame %d animating!\n", frame);
+
         // TODO Calculate the animation
         for(int idx = 0; idx < BUFFER_SIZE; idx++) {
-           display_buffer[idx] = 128;
+           display_buffer[idx] = (frame+idx)%128;
         }
 
         // Wait for last transmission to be successful before swapping buffers
-        ret=spi_device_get_trans_result(spi, &last_buf_desc, portMAX_DELAY);
-        assert(ret==ESP_OK);
+        if(frame != 0) {
+           ret=spi_device_get_trans_result(spi, &last_buf_desc, portMAX_DELAY);
+           assert(ret==ESP_OK);
+        }
 
         // Swap buffers
         last_buf_desc = &trans_buf[display_buffer_idx];
@@ -72,12 +85,14 @@ static void animate(spi_device_handle_t spi) {
         // Send the data to the SPI device
         ret=spi_device_queue_trans(spi, &trans_buf[display_buffer_idx], portMAX_DELAY);
         assert(ret==ESP_OK);
+        frame++;
     }
 }
 
 void app_main() {
     esp_err_t ret;
 
+    printf("System initialization!\n");
     // SPI device configuration structs
     spi_device_handle_t spi;
     spi_bus_config_t buscfg={
@@ -91,18 +106,23 @@ void app_main() {
     spi_device_interface_config_t devcfg={
         .clock_speed_hz=100*1000,           //Clock out at 100 kHz
         .mode=0,                                //SPI mode 0
-        .spics_io_num=PIN_NUM_CS,               //CS pin
+        .spics_io_num=-1,               //CS pin
         .queue_size=7,                          //We want to be able to queue 7 transactions at a time
         .command_bits=0, // Do not use command/address, just send raw data to Shift Registers
         .address_bits=0,
-        .dummy_bits=0
+        .dummy_bits=0,
+        .pre_cb=pre_g,
+        .post_cb=post_g
     };
+
+    gpio_set_direction(PIN_NUM_CS, GPIO_MODE_OUTPUT);
 
     // Initialize the SPI bus with configuration
     ret=spi_bus_initialize(HSPI_HOST, &buscfg, 1);
     ESP_ERROR_CHECK(ret);
     ret=spi_bus_add_device(HSPI_HOST, &devcfg, &spi);
     ESP_ERROR_CHECK(ret);
+    printf("SPI Bus initialized!\n");
 
     // Do wolffy stuff
     animate(spi);
