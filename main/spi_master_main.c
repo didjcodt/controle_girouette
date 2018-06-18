@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "font.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
@@ -13,7 +14,9 @@
 #define PIN_NUM_CS   5
 
 // There are 5 8-bit shift registers per panel, 2 panels
-#define BUFFER_SIZE 5
+#define NB_OF_PANELS 2
+#define BUFFER_SIZE_PER_PANEL 5
+#define BUFFER_SIZE (BUFFER_SIZE_PER_PANEL*NB_OF_PANELS)
 
 // Place data into DRAM. Constant data gets placed into DROM by default, which is not accessible by DMA.
 DRAM_ATTR static uint8_t buffer_0[BUFFER_SIZE];
@@ -49,14 +52,6 @@ static spi_transaction_t trans_buf[2] = {
 
 static spi_transaction_t *last_buf_desc = &trans_buf[0];
 
-static void pre_g(spi_transaction_t *t) {
-   gpio_set_level(PIN_NUM_CS, 1);
-}
-
-static void post_g(spi_transaction_t *t) {
-   gpio_set_level(PIN_NUM_CS, 0);
-}
-
 // Simple routine to generate some patterns and send them to the LED Panel.
 static void animate(spi_device_handle_t spi) {
    int frame = 0;
@@ -70,15 +65,15 @@ static void animate(spi_device_handle_t spi) {
          update_counter++;
       }
 
-      for (int line = 0; line < 8; line++) {
-
-         // TODO Calculate the animation
-         for(int idx = 0; idx < BUFFER_SIZE-1; idx++) {
-            write_buffer[idx] = (idx == 0)*(1<<update_counter%8);
+      for (int line = 0; line < 7; line++) {
+         // TODO Animate :)
+         for(int panel_idx = 0; panel_idx < NB_OF_PANELS; panel_idx++) {
+            for(int idx = 0; idx < BUFFER_SIZE_PER_PANEL-1; idx++) {
+               write_buffer[panel_idx*BUFFER_SIZE_PER_PANEL+idx] = cp437_font[65+idx][6-line];
+            }
+            // Scan line
+            write_buffer[(panel_idx+1)*BUFFER_SIZE_PER_PANEL-1] = 1<<line;
          }
-
-         // Scan line
-         write_buffer[4] = 1<<line;
 
          // Wait for last transmission to be successful before swapping buffers
          if(line != 0) {
@@ -114,21 +109,17 @@ void app_main() {
       .sclk_io_num=PIN_NUM_CLK,
       .quadwp_io_num=-1,
       .quadhd_io_num=-1,
-      .max_transfer_sz=8
+      .max_transfer_sz=BUFFER_SIZE
    };
    spi_device_interface_config_t devcfg={
-      .clock_speed_hz=100*1000,  //Clock out at 100 kHz
-      .mode=0,                   //SPI mode 0
-      .spics_io_num=-1,          //CS pin
-      .queue_size=10,             //We want to be able to queue 10 transactions at a time
-      .command_bits=0,           // Do not use command/address, just send raw data to Shift Registers
+      .clock_speed_hz=2*1000*1000, // Clock out at 1 MHz
+      .mode=0,                     // SPI mode 0
+      .spics_io_num=PIN_NUM_CS,    // CS pin
+      .queue_size=10,              // We want to be able to queue 10 transactions at a time
+      .command_bits=0,             // Do not use command/address, just send raw data to Shift Registers
       .address_bits=0,
-      .dummy_bits=0,
-      .pre_cb=pre_g,
-      .post_cb=post_g
+      .dummy_bits=0
    };
-
-   gpio_set_direction(PIN_NUM_CS, GPIO_MODE_OUTPUT);
 
    // Initialize the SPI bus with configuration
    ret=spi_bus_initialize(HSPI_HOST, &buscfg, 1);
@@ -137,6 +128,6 @@ void app_main() {
    ESP_ERROR_CHECK(ret);
    printf("SPI Bus initialized!\n");
 
-   // Do wolffy stuff
+   // Do woofy stuff
    animate(spi);
 }
