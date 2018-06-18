@@ -1,1 +1,1 @@
-Using an ESP32 to control a French LED Panel
+Using an ESP32 to control a D713-2 FHLP99 bus LED display (Named Controle Girouette)
