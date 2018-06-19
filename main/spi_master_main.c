@@ -4,14 +4,9 @@
 // FreeRTOS includes
 #include "freertos/FreeRTOS.h"
 
-// Driver includes
-#include "driver/spi_master.h"
-#include "driver/gpio.h"
-
 // ESP specific includes
 #include "esp_system.h"
 #include "esp_log.h"
-#include "soc/gpio_struct.h"
 #include "nvs_flash.h"
 
 // Other
