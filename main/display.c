@@ -70,14 +70,18 @@ static void animate_task(void* pvParameter) {
       }
 
       for (int line = 0; line < 7; line++) {
-         // TODO Animate :)
-         for(int panel_idx = 0; panel_idx < NB_OF_PANELS; panel_idx++) {
-            for(int idx = 0; idx < BUFFER_SIZE_PER_PANEL-1; idx++) {
-               int char_in_string = (int)mqtt_string[idx];
-               write_buffer[panel_idx*BUFFER_SIZE_PER_PANEL+idx] = cp437_horizontal_font[char_in_string][1+line];
-            }
+         // Animate :)
+         int scanline_offset = 0;
+         for(int idx = 0; idx < BUFFER_SIZE; idx++) {
             // Scan line
-            write_buffer[(panel_idx+1)*BUFFER_SIZE_PER_PANEL-1] = 1<<line;
+            if(idx%BUFFER_SIZE_PER_PANEL == 4) {
+               write_buffer[idx] = 1<<line;
+               scanline_offset++;
+            } else {
+               // Write the character
+               int char_in_string = (int)mqtt_string[idx-scanline_offset];
+               write_buffer[idx] = cp437_horizontal_font[char_in_string][1+line];
+            }
          }
 
          // Wait for last transmission to be successful before swapping buffers
