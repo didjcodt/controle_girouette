@@ -1,0 +1,21 @@
+menu "WiFi LED Panel"
+
+config WIFI_SSID
+    string "WiFi SSID"
+    default "ssid"
+    help
+        SSID (network name) to connect to.
+
+config WIFI_PASSWORD
+    string "WiFi Password"
+    default "my super secret password"
+    help
+        WiFi password (WPA or WPA2) to connect to.
+
+config MQTT_URL
+    string "MQTT URL"
+    default "mqtt://iot.eclipse.org"
+    help
+        MQTT Url to connect to.
+
+endmenu
