@@ -16,7 +16,7 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event) {
       case MQTT_EVENT_CONNECTED:
          ESP_LOGI("MQTT_CLIENT", "MQTT_EVENT_CONNECTED");
 
-         msg_id = esp_mqtt_client_subscribe(client, "/topic/binouze_rezel/led_0", 0);
+         msg_id = esp_mqtt_client_subscribe(client, CONFIG_MQTT_TOPIC, 0);
          ESP_LOGI("MQTT_CLIENT", "sent subscribe successful, msg_id=%d", msg_id);
          break;
 

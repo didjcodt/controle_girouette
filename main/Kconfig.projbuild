@@ -18,4 +18,10 @@ config MQTT_URL
     help
         MQTT Url to connect to.
 
+config MQTT_TOPIC
+    string "MQTT Topic"
+    default "/led/"
+    help
+        MQTT Topic to subscribe.
+
 endmenu
