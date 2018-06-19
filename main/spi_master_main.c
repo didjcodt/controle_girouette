@@ -60,7 +60,7 @@ static void animate(spi_device_handle_t spi) {
 
    while(1) {
       // No spam :)
-      if(frame % (1 << 10) == 0) {
+      if(frame % (1 << 9) == 0) {
          printf("frame %d scanning!\n", frame);
          update_counter++;
       }
@@ -69,7 +69,7 @@ static void animate(spi_device_handle_t spi) {
          // TODO Animate :)
          for(int panel_idx = 0; panel_idx < NB_OF_PANELS; panel_idx++) {
             for(int idx = 0; idx < BUFFER_SIZE_PER_PANEL-1; idx++) {
-               write_buffer[panel_idx*BUFFER_SIZE_PER_PANEL+idx] = cp437_font[65+idx][6-line];
+               write_buffer[panel_idx*BUFFER_SIZE_PER_PANEL+idx] = cp437_horizontal_font[65+(update_counter%60)+idx][1+line];
             }
             // Scan line
             write_buffer[(panel_idx+1)*BUFFER_SIZE_PER_PANEL-1] = 1<<line;
