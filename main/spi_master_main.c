@@ -4,15 +4,15 @@
 // FreeRTOS includes
 #include "freertos/FreeRTOS.h"
 
+// Driver includes
+#include "driver/spi_master.h"
+#include "driver/gpio.h"
+
 // ESP specific includes
 #include "esp_system.h"
 #include "esp_log.h"
 #include "soc/gpio_struct.h"
 #include "nvs_flash.h"
-
-// Driver includes
-#include "driver/spi_master.h"
-#include "driver/gpio.h"
 
 // Other
 #include "mqtt.h"
@@ -42,8 +42,5 @@ void app_main() {
    nvs_flash_init();
    wifi_init();
    mqtt_init();
-   spi_device_handle_t spi = display_init(PIN_NUM_MOSI, PIN_NUM_CLK, PIN_NUM_CS);
-
-   // Do woofy stuff
-   animate(spi);
+   display_init(PIN_NUM_MOSI, PIN_NUM_CLK, PIN_NUM_CS);
 }

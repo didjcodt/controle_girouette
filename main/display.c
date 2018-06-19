@@ -1,4 +1,14 @@
 #include "display.h"
+
+// Driver includes
+#include "driver/spi_master.h"
+#include "driver/gpio.h"
+#include "soc/gpio_struct.h"
+
+// FreeRTOS includes
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 #include "font.h"
 
 // There are 5 8-bit shift registers per panel, 2 panels
@@ -39,9 +49,13 @@ static spi_transaction_t trans_buf[2] = {
 };
 
 static spi_transaction_t *last_buf_desc = &trans_buf[0];
+static spi_device_handle_t spi;
 
 // Simple routine to generate some patterns and send them to the LED Panel.
-void animate(spi_device_handle_t spi) {
+#define STACK_SIZE 4096
+StaticTask_t animate_task_buffer;
+StackType_t animate_task_stack[STACK_SIZE];
+static void animate_task(void* pvParameter) {
    int frame = 0;
    int update_counter = 0;
    esp_err_t ret;
@@ -85,9 +99,8 @@ void animate(spi_device_handle_t spi) {
    }
 }
 
-spi_device_handle_t display_init(int mosi, int clk, int cs) {
+void display_init(int mosi, int clk, int cs) {
    // SPI device configuration structs
-   spi_device_handle_t spi;
    spi_bus_config_t buscfg={
       .miso_io_num=-1,
       .mosi_io_num=mosi,
@@ -115,5 +128,5 @@ spi_device_handle_t display_init(int mosi, int clk, int cs) {
    ESP_ERROR_CHECK(ret);
    printf("SPI Bus initialized!\n");
 
-   return spi;
+   xTaskCreateStatic(&animate_task, "animate_task", STACK_SIZE, NULL, tskIDLE_PRIORITY+1, animate_task_stack, &animate_task_buffer);
 }
