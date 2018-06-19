@@ -9,6 +9,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "string.h"
 #include "mqtt.h"
 #include "font.h"
 
@@ -51,6 +52,7 @@ static spi_transaction_t trans_buf[2] = {
 
 static spi_transaction_t *last_buf_desc = &trans_buf[0];
 static spi_device_handle_t spi;
+int scrolling_shift = 0;
 
 // Simple routine to generate some patterns and send them to the LED Panel.
 #define STACK_SIZE 4096
@@ -58,15 +60,41 @@ StaticTask_t animate_task_buffer;
 StackType_t animate_task_stack[STACK_SIZE];
 static void animate_task(void* pvParameter) {
    int frame = 0;
-   int update_counter = 0;
+   int wait_counter = 0;
+   int paused = 1;
    esp_err_t ret;
 
    while(1) {
       // No spam :)
       if(frame % (1 << 9) == 0) {
          printf("frame %d scanning!\n", frame);
-         printf("%d, %d\n", (int)mqtt_string[0], (int)'a');
-         update_counter++;
+      }
+
+      if(paused == 0) {
+         // Update scrolling sometimes
+         if(frame % (1 << 9) == 0) {
+            scrolling_shift ++;
+            printf("New scroll: %d\n", scrolling_shift);
+         }
+         if(scrolling_shift+BUFFER_SIZE-10 > 0 &&
+               mqtt_string[scrolling_shift+BUFFER_SIZE-10] == '\0') {
+            paused = 1;
+            scrolling_shift = -4;
+         }
+      } else {
+         if(frame % (1 << 9) == 0)
+            wait_counter++;
+         if(wait_counter == 5) {
+            frame = 0;
+            wait_counter = 0;
+            paused = 0;
+         }
+      }
+
+      // Reset scrolling on new message, or when last char was reached
+      if(new_string == 1) {
+         new_string = 0;
+         scrolling_shift = -4;
       }
 
       for (int line = 0; line < 7; line++) {
@@ -79,7 +107,10 @@ static void animate_task(void* pvParameter) {
                scanline_offset++;
             } else {
                // Write the character
-               int char_in_string = (int)mqtt_string[idx-scanline_offset];
+               uint8_t char_in_string = ' ';
+               if(idx-scanline_offset+scrolling_shift >= 0 && 
+                  idx-scanline_offset+scrolling_shift < strlen(mqtt_string))
+                  char_in_string = (int)mqtt_string[idx-scanline_offset+scrolling_shift];
                write_buffer[idx] = cp437_horizontal_font[char_in_string][1+line];
             }
          }

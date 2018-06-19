@@ -5,6 +5,7 @@
 #include "mqtt_client.h"
 
 char mqtt_string[MQTT_PAYLOAD_MAX_SIZE] = {0};
+int new_string = 0;
 
 // MQTT
 static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event) {
@@ -40,12 +41,14 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event) {
          printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
          printf("DATA=%.*s\r\n", event->data_len, event->data);
 
-         if (event->data_len < MQTT_PAYLOAD_MAX_SIZE) {
+         if (event->data_len < MQTT_PAYLOAD_MAX_SIZE-1) {
             memcpy(mqtt_string, event->data, event->data_len*sizeof(char));
             memset(&mqtt_string[event->data_len], 0, MQTT_PAYLOAD_MAX_SIZE-event->data_len);
+            mqtt_string[event->data_len] = '\0';
          } else {
             ESP_LOGI("MQTT_CLIENT", "Payload is larger than buffer!");
          }
+         new_string = 1;
 
          break;
 
