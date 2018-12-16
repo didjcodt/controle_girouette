@@ -18,10 +18,34 @@ config MQTT_URL
     help
         MQTT Url to connect to.
 
-config MQTT_TOPIC
-    string "MQTT Topic"
-    default "/led/"
+config MQTT_CLIENT_ID
+    string "MQTT Client ID"
+    default "ledpanel-1"
     help
-        MQTT Topic to subscribe.
+        MQTT ClientID to use.
+
+config MQTT_TOPIC_DISPLAY
+    string "MQTT Display topic"
+    default "led/panel_1"
+    help
+        MQTT Topic to use for display.
+
+config MQTT_TOPIC_LAST_WILL
+    string "MQTT Last Will topic"
+    default "led/death"
+    help
+        MQTT Topic to use to publish the testament.
+
+config MQTT_LAST_WILL_MESSAGE
+    string "MQTT Last Will message"
+    default "To whom it may concern, me, LED Panel 1, died. I give my ClientID to my brother."
+    help
+        MQTT message to publish as testament.
+
+config MQTT_TOPIC_OTA
+    string "OTA Topic"
+    default "led/ota"
+    help
+        MQTT topic of the binary to OTA upgrade to (the messages contain a URL).
 
 endmenu

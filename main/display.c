@@ -66,7 +66,7 @@ static void animate_task(void* pvParameter) {
 
    while(1) {
       // No spam :)
-      if(frame % (1 << 9) == 0) {
+      if(frame % (1 << 12) == 0) {
          printf("frame %d scanning!\n", frame);
       }
 
