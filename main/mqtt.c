@@ -7,8 +7,19 @@
 char mqtt_string[MQTT_PAYLOAD_MAX_SIZE] = {0};
 int new_string = 0;
 
+// MQTT Client
+static esp_mqtt_client_handle_t client;
+
 // MQTT event group
 EventGroupHandle_t mqtt_event_group;
+
+static int mqtt_vprintf(const char* fmt, va_list ap) {
+   // Get the formatted string
+   char buf[256];
+   int bufsz = vsprintf(buf, fmt, ap);
+   esp_mqtt_client_publish(client, CONFIG_MQTT_TOPIC_LOGS, buf, bufsz, 1, 0);
+   return bufsz;
+}
 
 // MQTT event handler
 static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event) {
@@ -28,27 +39,33 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event) {
 
          xEventGroupSetBits(mqtt_event_group, MQTT_CONNECTED_BIT);
 
+         ESP_LOGI("MQTT_CLIENT", "Connected to MQTT broker, redirecting logs to topic %s. Bye!",
+               CONFIG_MQTT_TOPIC_LOGS);
+         esp_log_set_vprintf(mqtt_vprintf);
+         ESP_LOGI("MQTT_CLIENT", "Connected to MQTT broker, logs redirected to topic %s",
+               CONFIG_MQTT_TOPIC_LOGS);
+
          break;
 
       case MQTT_EVENT_DISCONNECTED:
-         ESP_LOGI("MQTT_CLIENT", "MQTT_EVENT_DISCONNECTED");
+         ESP_LOGD("MQTT_CLIENT", "MQTT_EVENT_DISCONNECTED");
          xEventGroupClearBits(mqtt_event_group, MQTT_CONNECTED_BIT);
          break;
 
       case MQTT_EVENT_SUBSCRIBED:
-         ESP_LOGI("MQTT_CLIENT", "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
+         ESP_LOGD("MQTT_CLIENT", "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
          break;
 
       case MQTT_EVENT_UNSUBSCRIBED:
-         ESP_LOGI("MQTT_CLIENT", "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
+         ESP_LOGD("MQTT_CLIENT", "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
          break;
 
       case MQTT_EVENT_PUBLISHED:
-         ESP_LOGI("MQTT_CLIENT", "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+         ESP_LOGD("MQTT_CLIENT", "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
          break;
 
       case MQTT_EVENT_DATA:
-         ESP_LOGI("MQTT_CLIENT", "MQTT_EVENT_DATA");
+         ESP_LOGD("MQTT_CLIENT", "MQTT_EVENT_DATA");
          printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
 
          // Sanity check
@@ -77,7 +94,7 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event) {
          break;
 
       case MQTT_EVENT_ERROR:
-         ESP_LOGI("MQTT_CLIENT", "MQTT_EVENT_ERROR");
+         ESP_LOGD("MQTT_CLIENT", "MQTT_EVENT_ERROR");
          break;
    }
    return ESP_OK;
@@ -87,6 +104,8 @@ void mqtt_init(void) {
    const esp_mqtt_client_config_t mqtt_cfg = {
       .uri = CONFIG_MQTT_URL,
       .client_id = CONFIG_MQTT_CLIENT_ID,
+      .username = CONFIG_MQTT_CLIENT_ID,
+      .password = CONFIG_MQTT_CLIENT_ID,
       .event_handle = mqtt_event_handler,
       .lwt_topic = CONFIG_MQTT_TOPIC_LAST_WILL,
       .lwt_msg = CONFIG_MQTT_LAST_WILL_MESSAGE,
@@ -95,7 +114,6 @@ void mqtt_init(void) {
 
    mqtt_event_group = xEventGroupCreate();
 
-   esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
+   client = esp_mqtt_client_init(&mqtt_cfg);
    esp_mqtt_client_start(client);
 }
-

@@ -48,4 +48,10 @@ config MQTT_TOPIC_OTA
     help
         MQTT topic of the binary to OTA upgrade to (the messages contain a URL).
 
+config MQTT_TOPIC_LOGS
+    string "Logs Topic"
+    default "led/logs"
+    help
+        MQTT topic where the logs will be transmitted.
+
 endmenu
