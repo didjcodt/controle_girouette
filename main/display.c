@@ -148,7 +148,7 @@ void display_init(int mosi, int clk, int cs) {
       .max_transfer_sz=BUFFER_SIZE
    };
    spi_device_interface_config_t devcfg={
-      .clock_speed_hz=2*1000*1000, // Clock out at 1 MHz
+      .clock_speed_hz=1500000, // Clock out at 1.5 MHz
       .mode=0,                     // SPI mode 0
       .spics_io_num=cs,    // CS pin
       .queue_size=10,              // We want to be able to queue 10 transactions at a time
