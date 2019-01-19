@@ -17,7 +17,7 @@
 #include "wifi.h"
 
 // GPIO Definition
-#define PIN_NUM_MOSI 23
+#define PIN_NUM_MOSI 19
 #define PIN_NUM_CLK  18
 #define PIN_NUM_CS   5
 
