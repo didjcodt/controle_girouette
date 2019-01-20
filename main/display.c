@@ -19,14 +19,12 @@
 #define BUFFER_SIZE (BUFFER_SIZE_PER_PANEL * NB_OF_PANELS)
 
 // Place data into DRAM. Constant data gets placed into DROM by default, which
-// is not accessible by DMA.
-DRAM_ATTR static uint8_t buffer_0[BUFFER_SIZE];
-DRAM_ATTR static uint8_t buffer_1[BUFFER_SIZE];
+// is not accessible by DMA. This array contains two buffers.
+DRAM_ATTR static uint8_t buffers[2 * BUFFER_SIZE];
 
-// Display buffer. The write buffer is the other (0->1, 1->0)
-static int display_buffer_idx = 0;
-static uint8_t* display_buffer = buffer_0;
-static uint8_t* write_buffer = buffer_1;
+// Display and write buffer
+static uint8_t* display_buffer = &buffers[0];
+static uint8_t* write_buffer = &buffers[BUFFER_SIZE];
 
 // Transaction descriptors. Declared static so they're not allocated on the
 // stack; we need this memory even when this function is finished because the
@@ -38,7 +36,7 @@ static spi_transaction_t trans_buf[2] = {{
                                              .addr = 0,
                                              .length = 8 * BUFFER_SIZE,
                                              .rxlength = 0,
-                                             .tx_buffer = &buffer_0,
+                                             .tx_buffer = &buffers[0],
                                              .rx_buffer = NULL,
                                          },
                                          {
@@ -47,7 +45,7 @@ static spi_transaction_t trans_buf[2] = {{
                                              .addr = 0,
                                              .length = 8 * BUFFER_SIZE,
                                              .rxlength = 0,
-                                             .tx_buffer = &buffer_1,
+                                             .tx_buffer = &buffers[BUFFER_SIZE],
                                              .rx_buffer = NULL,
                                          }};
 
@@ -128,14 +126,17 @@ static void animate_task(void* pvParameter) {
             }
 
             // Swap buffers
-            display_buffer_idx = 1 - display_buffer_idx;
-            display_buffer = display_buffer_idx == 0 ? buffer_0 : buffer_1;
-            write_buffer = display_buffer_idx == 0 ? buffer_1 : buffer_0;
-            last_buf_desc = &trans_buf[1 - display_buffer_idx];
+            uint8_t* temp_buffer = display_buffer;
+            display_buffer = write_buffer;
+            write_buffer = temp_buffer;
 
-            // Send the data to the SPI device
-            ret = spi_device_queue_trans(spi, &trans_buf[display_buffer_idx],
-                                         portMAX_DELAY);
+            // last_buf_desc now contains the current display buffer
+            last_buf_desc = &trans_buf[display_buffer == &buffers[0] ? 0 : 1];
+
+            // Send the new write buffer to the SPI device
+            ret = spi_device_queue_trans(
+                spi, &trans_buf[display_buffer == &buffers[0] ? 1 : 0],
+                portMAX_DELAY);
             assert(ret == ESP_OK);
         }
 
