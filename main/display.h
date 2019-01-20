@@ -1,6 +1,7 @@
 #pragma once
 
 typedef struct {
+    int clock_speed_hz;
     int mosi;
     int clk;
     int cs;

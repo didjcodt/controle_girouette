@@ -153,11 +153,11 @@ void display_init(display_spi_device_t* device) {
                                .quadhd_io_num = -1,
                                .max_transfer_sz = BUFFER_SIZE};
     spi_device_interface_config_t devcfg = {
-        .clock_speed_hz = 1500000,   // Clock out at 1.5 MHz
-        .mode = 0,                   // SPI mode 0
-        .spics_io_num = device->cs,  // CS pin
-        .queue_size = 10,            // We want to be able to queue 10
-                                     // transactions at a time
+        .clock_speed_hz = device->clock_speed_hz,  // Clock out at 1.5 MHz
+        .mode = 0,                                 // SPI mode 0
+        .spics_io_num = device->cs,                // CS pin
+        .queue_size = 10,   // We want to be able to queue 10
+                            // transactions at a time
         .command_bits = 0,  // Do not use command/address, just send raw
                             // data to Shift Registers
         .address_bits = 0,
