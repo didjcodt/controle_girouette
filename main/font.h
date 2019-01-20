@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdint.h>
 
 // CP437 font adapted for a 7 lines display
