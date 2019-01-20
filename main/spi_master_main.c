@@ -66,5 +66,7 @@ void app_main() {
     // Depends on MQTT+WiFi
     ota_init();
 
-    display_init(PIN_NUM_MOSI, PIN_NUM_CLK, PIN_NUM_CS);
+    display_spi_device_t device = {
+        .mosi = PIN_NUM_MOSI, .clk = PIN_NUM_CLK, .cs = PIN_NUM_CS};
+    display_init(&device);
 }
