@@ -1,6 +1,4 @@
-#pragma once
-
-#include <stdint.h>
+#include "font_cp437.h"
 
 // CP437 font adapted for a 7 lines display
 const uint8_t cp437_vertical_font[][7] = {
