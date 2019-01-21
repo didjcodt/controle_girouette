@@ -125,11 +125,6 @@ static void animate_task(void* pvParameter) {
                 assert(ret == ESP_OK);
             }
 
-            // Swap buffers
-            uint8_t* temp_buffer = display_buffer;
-            display_buffer = write_buffer;
-            write_buffer = temp_buffer;
-
             // last_buf_desc now contains the current display buffer
             last_buf_desc = &trans_buf[display_buffer == &buffers[0] ? 0 : 1];
 
@@ -138,6 +133,11 @@ static void animate_task(void* pvParameter) {
                 spi, &trans_buf[display_buffer == &buffers[0] ? 1 : 0],
                 portMAX_DELAY);
             assert(ret == ESP_OK);
+
+            // Swap buffers
+            uint8_t* temp_buffer = display_buffer;
+            display_buffer = write_buffer;
+            write_buffer = temp_buffer;
         }
 
         // New frame
