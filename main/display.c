@@ -58,6 +58,7 @@ int scrolling_shift = 0;
 StaticTask_t animate_task_buffer;
 StackType_t animate_task_stack[STACK_SIZE];
 static void animate_task(void* pvParameter) {
+    int first_frame = 1;
     int frame = 0;
     int wait_counter = 0;
     int paused = 1;
@@ -118,12 +119,13 @@ static void animate_task(void* pvParameter) {
             }
 
             // Wait for last transmission to be successful before swapping
-            // buffers
-            if (line != 0) {
+            // buffers. Exception for first world transmission
+            if (first_frame == 0) {
                 ret = spi_device_get_trans_result(spi, &last_buf_desc,
                                                   portMAX_DELAY);
                 assert(ret == ESP_OK);
             }
+            first_frame = 0;
 
             // last_buf_desc now contains the current display buffer
             last_buf_desc = &trans_buf[display_buffer == &buffers[0] ? 0 : 1];
