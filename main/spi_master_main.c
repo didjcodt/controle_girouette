@@ -66,7 +66,7 @@ void app_main() {
     // Depends on MQTT+WiFi
     ota_init();
 
-    display_spi_device_t device = {.clock_speed_hz = 1500000,
+    display_spi_device_t device = {.clock_speed_hz = 2000000,
                                    .mosi = PIN_NUM_MOSI,
                                    .clk = PIN_NUM_CLK,
                                    .cs = PIN_NUM_CS};
